@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { 
+    signInWithPopup, 
+    GoogleAuthProvider,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword 
+} from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn } from 'react-feather';
@@ -30,8 +35,16 @@ const Login = () => {
                 await createUserWithEmailAndPassword(auth, email, password);
             }
             navigate('/');
-        } catch (error) {
-            setError(isLogin ? 'Неверный email или пароль' : 'Ошибка регистрации');
+        } catch (error: any) {
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                setError('Неверный email или пароль');
+            } else if (error.code === 'auth/email-already-in-use') {
+                setError('Этот email уже зарегистрирован');
+            } else if (error.code === 'auth/weak-password') {
+                setError('Пароль должен быть не менее 6 символов');
+            } else {
+                setError(isLogin ? 'Ошибка входа' : 'Ошибка регистрации');
+            }
         }
     };
 
