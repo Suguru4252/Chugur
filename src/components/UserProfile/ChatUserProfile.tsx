@@ -1,110 +1,101 @@
-import { Mail, ArrowLeft, Phone, Activity, LogIn } from 'react-feather';
-import { useNavigate } from 'react-router-dom';
-import { getTime, getLastActivity } from '../../utilities/getTime';
-import { ChatRoomMedia } from '../ChatRoomMedia/ChatRoomMedia';
-import { Alert } from '../common/Alert';
-import { Loader } from '../common/Loader/Loader';
-import { SocialLinks } from './SocialLinks';
-import { useUserProfile } from './useUserProfile';
+import React from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { X, Mail, Calendar, Edit2 } from 'react-feather';
 
-const ChatUserProfile = () => {
-    const { userInfo, loading, error, photos, videos, errorMessage } = useUserProfile();
-    const navigate = useNavigate();
-    if (loading) {
+interface UserProfileProps {
+    userId?: string;
+    onClose: () => void;
+    onEdit?: () => void;
+}
+
+const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onEdit }) => {
+    const { user } = useAuth();
+    const isCurrentUser = !userId || userId === user?.uid;
+
+    const profileUser = isCurrentUser ? user : null; // Здесь должна быть загрузка данных пользователя
+
+    if (!profileUser) {
         return (
-            <div className="mt-10">
-                <Loader />
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                <div className="card w-full max-w-md bg-base-100 shadow-xl">
+                    <div className="card-body">
+                        <p>Загрузка...</p>
+                    </div>
+                </div>
             </div>
         );
     }
 
-    if (error) {
-        return <Alert title="Failed to load User Profile" />;
-    }
-    const createDate = getTime(userInfo?.createdAt?.seconds, true);
-
     return (
-        <div className="bg-base-300 relative">
-            <button
-                className="btn btn-square hover:bg-transparent hover:-translate-x-1 p-0 bg-transparent border-none absolute top-2 left-0"
-                onClick={() => {
-                    navigate(-1);
-                }}
-            >
-                <ArrowLeft className="text-base-content" />
-            </button>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="card w-full max-w-md bg-base-100 shadow-xl">
+                <div className="card-body">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-2xl font-bold">Профиль</h2>
+                        <button onClick={onClose} className="btn btn-ghost btn-circle">
+                            <X size={24} />
+                        </button>
+                    </div>
 
-            <div className="bg-base-100 text-base text-center p-5 w-full  flex flex-col items-center">
-                <img
-                    src={
-                        userInfo?.photoURL! ??
-                        'https://cdn.pixabay.com/photo/2016/08/08/09/17/avatar-1577909_960_720.png'
-                    }
-                    className="w-40 h-40 rounded-full object-cover border-4 border-violet-400 shadow-sm shadow-sky-500"
-                />
+                    <div className="flex flex-col items-center mb-6">
+                        <div className="avatar mb-4">
+                            <div className="w-24 h-24 rounded-full bg-primary text-primary-content flex items-center justify-center">
+                                {profileUser.photoURL ? (
+                                    <img src={profileUser.photoURL} alt={profileUser.displayName || ''} />
+                                ) : (
+                                    <span className="text-3xl font-semibold">
+                                        {profileUser.displayName?.charAt(0) || 'U'}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        <h3 className="text-xl font-bold">{profileUser.displayName || 'Без имени'}</h3>
+                        
+                        {isCurrentUser && (
+                            <button 
+                                onClick={onEdit}
+                                className="btn btn-outline btn-sm mt-2 gap-2"
+                            >
+                                <Edit2 size={16} />
+                                Редактировать
+                            </button>
+                        )}
+                    </div>
 
-                <div>
-                    <h1 className="text-5xl font-bold capitalize">{userInfo?.name}</h1>
-                    {userInfo?.story ? (
-                        <h3 className="font-medium mb-4 mt-2"> {userInfo.story}</h3>
-                    ) : null}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3 p-3 bg-base-200 rounded-lg">
+                            <Mail className="text-primary" size={20} />
+                            <div>
+                                <p className="text-sm text-base-content/70">Email</p>
+                                <p className="font-medium">{profileUser.email}</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 p-3 bg-base-200 rounded-lg">
+                            <Calendar className="text-primary" size={20} />
+                            <div>
+                                <p className="text-sm text-base-content/70">Зарегистрирован</p>
+                                <p className="font-medium">
+                                    {profileUser.metadata?.creationTime 
+                                        ? new Date(profileUser.metadata.creationTime).toLocaleDateString('ru-RU')
+                                        : 'Неизвестно'
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {!isCurrentUser && (
+                        <div className="flex gap-2 mt-6">
+                            <button className="btn btn-primary flex-1">
+                                Написать сообщение
+                            </button>
+                        </div>
+                    )}
                 </div>
-
-                <div className="grid sm:grid-cols-4 gap-4 grid-cols-2 my-6">
-                    <div>
-                        <div className="flex font-semibold items-center gap-1 justify-center">
-                            {' '}
-                            <Mail size="18px" />
-                            Email
-                        </div>
-                        <p>{userInfo?.email}</p>
-                    </div>
-
-                    <div>
-                        <div className="flex font-semibold items-center gap-1 justify-center">
-                            {' '}
-                            <Phone size="18px" /> Phone
-                        </div>
-                        <p>{userInfo?.phone ? userInfo.phone : '...'}</p>
-                    </div>
-
-                    <div>
-                        <div className="flex font-semibold items-center gap-1 justify-center">
-                            <Activity size="18px" />
-                            Joined At
-                        </div>
-
-                        <p className="">{createDate ? <p> {createDate}</p> : '...'}</p>
-                    </div>
-
-                    <div>
-                        <div className="flex font-semibold items-center gap-1 justify-center">
-                            <LogIn size="18px" />
-                            Last Activity
-                        </div>
-                        <p className="">{getLastActivity(userInfo?.lastLogin)}</p>
-                    </div>
-                </div>
-
-                <SocialLinks socialLinks={userInfo?.socialLinks} />
-
-                <button
-                    className="btn btn-accent text-white bg-sky-500 shadow-md shadow-sky-500 mt-6 mb-4"
-                    onClick={() => {
-                        navigate(-1);
-                    }}
-                >
-                    Send Message
-                </button>
-            </div>
-
-            <div className="bg-base-100 mt-3">
-                {errorMessage ? (
-                    <Alert title="An error has occurred while fetching media files" type="error" />
-                ) : null}
-                <ChatRoomMedia photos={photos!} videos={videos!} />
             </div>
         </div>
     );
 };
-export default ChatUserProfile;
+
+export default UserProfile;
